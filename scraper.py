@@ -12,7 +12,8 @@ html = BeautifulSoup(data, 'html.parser')
 tables = html.findAll("table")
 pokemon_links = []
 
-# nested for loop intended to find all the links in each table, then append them to the master list above (pokemon_links)
+# nested for loop intended to find all the links in each table, then append them to the
+# master list above (pokemon_links) after checking for duplicates
 for table in tables:
     for link in table.findAll("a", attrs={"href": re.compile("/wiki/.+\(Pok%C3%A9mon\)")}):
         potential = link.get("href")
