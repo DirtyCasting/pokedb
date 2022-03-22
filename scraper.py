@@ -31,7 +31,10 @@ def get_master_list():
 
 
 master_list += (get_master_list())
-os.mkdir('./wiki')
+try:
+    os.mkdir('./wiki')
+except FileExistsError:
+    pass
 
 for pokemon_page in master_list:
     print(f"Fetching '{pokemon_page}'...")
