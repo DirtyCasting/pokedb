@@ -5,10 +5,9 @@ from pprint import pprint
 
 import re
 import requests
+import logging
 
-# TODO: make this a script arg instead of hardcoding it
-FIRST_MON = 1
-LAST_MON = 10
+logging.basicConfig(level=logging.DEBUG)
 BASE_URL = "https://www.serebii.net"
 NATIONAL_DEX_URL = "/pokemon/nationalpokedex.shtml"
 
@@ -25,10 +24,12 @@ def get_national_dex(dex_url):
     return pokemon_urls
 
 def get_pokemon_data(url):
-    print(url)
+    pokemon_page = requests.get(url)
+    soup = BeautifulSoup(pokemon_page.text, 'html.parser')
+    
 
 if __name__ == '__main__':
     national_dex_url = BASE_URL + NATIONAL_DEX_URL
     all_pokemon = get_national_dex(national_dex_url)
-    for pokemon in all_pokemon:
-        get_pokemon_data(BASE_URL + pokemon)
+    for link in all_pokemon:
+        get_pokemon_data(BASE_URL + link)
