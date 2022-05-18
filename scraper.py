@@ -3,24 +3,32 @@
 from bs4 import BeautifulSoup
 from pprint import pprint
 
+import re
 import requests
 
 # TODO: make this a script arg instead of hardcoding it
 FIRST_MON = 1
-LAST_MON = 1
+LAST_MON = 10
+BASE_URL = "https://www.serebii.net"
+NATIONAL_DEX_URL = "/pokemon/nationalpokedex.shtml"
 
-def get_pokemon_data(urls):
-    for url in urls:
-        pokedex_page = requests.get(url)
-        soup = BeautifulSoup(pokedex_page.text, "html.parser")
-        main_div = soup.find('div', {'id': 'content'})
-        pprint(main_div)
 
+def get_national_dex(dex_url):
+    dex_page = requests.get(dex_url)
+    soup = BeautifulSoup(dex_page.text, "html.parser")
+    dextable = soup.find("table", {'class': 'dextable'}) # dextable is the main table that holds all the pokemon links
+    pokemon_urls = []
+    for link in dextable.findAll('a', {'href': re.compile(r'\/pokemon\/\w+')}): # find all '/pokemon/{anything} links'
+        if not re.match(r'\/pokemon\/type\/\w+', link.get("href")): # remove all '/pokemon/type/{type} links'
+            pokemon_urls.append(link.get("href"))
+    pokemon_urls = [i for n, i in enumerate(pokemon_urls) if i not in pokemon_urls[:n]] # go over the list and remove duplicates
+    return pokemon_urls
+
+def get_pokemon_data(url):
+    print(url)
 
 if __name__ == '__main__':
-    #urls table code inspired by https://github.com/shadforth/pokemon-web-scraper <3
-    urls = ['https://serebii.net/pokedex/{}.shtml'.format(str(x).zfill(3))
-            for x in range(FIRST_MON, LAST_MON + 1)]
-    pprint(urls)
-    get_pokemon_data(urls)
-    
+    national_dex_url = BASE_URL + NATIONAL_DEX_URL
+    all_pokemon = get_national_dex(national_dex_url)
+    for pokemon in all_pokemon:
+        get_pokemon_data(BASE_URL + pokemon)
