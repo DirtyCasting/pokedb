@@ -15,13 +15,22 @@ NATIONAL_DEX_URL = "/pokemon/nationalpokedex.shtml"
 def get_national_dex(dex_url):
     dex_page = requests.get(dex_url)
     soup = BeautifulSoup(dex_page.text, "html.parser")
-    dextable = soup.find("table", {'class': 'dextable'}) # dextable is the main table that holds all the pokemon links
+
+    # dextable is the main table that holds all the pokemon links
+    dextable = soup.find("table", {'class': 'dextable'}) 
     pokemon_urls = []
-    for link in dextable.findAll('a', {'href': re.compile(r'\/pokemon\/\w+')}): # find all '/pokemon/{anything} links'
-        if not re.match(r'\/pokemon\/type\/\w+', link.get("href")): # remove all '/pokemon/type/{type} links'
+    # find all '/pokemon/{anything} links'
+    for link in dextable.findAll('a', {'href': re.compile(r'\/pokemon\/\w+')}):
+        # remove all '/pokemon/type/{type} links' 
+        if not re.match(r'\/pokemon\/type\/\w+', link.get("href")):
             pokemon_urls.append(link.get("href"))
-    pokemon_urls = [i for n, i in enumerate(pokemon_urls) if i not in pokemon_urls[:n]] # go over the list and remove duplicates
+    
+    # go over the list and remove duplicates
+    pokemon_urls = [i for n, i in enumerate(pokemon_urls) if i not in pokemon_urls[:n]]
     return pokemon_urls
+
+def get_generation_links(url):
+    print("dev")
 
 def get_pokemon_data(url):
     pokemon_page = requests.get(url)
