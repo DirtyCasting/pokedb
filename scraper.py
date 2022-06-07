@@ -52,20 +52,47 @@ def get_generation_links(url):
 
     return dex_links
 
+def get_pokemon_name(dextable):
+    english = dextable.find('b', text=re.compile('English'))
+    pokemon = english.parent.find_next_sibling('td').text
+
+    return pokemon
+
+def get_pokemon_types(dextable):
+    # takes the first table from get_pokemon_data
+    type_cell = dextable.find('td', {'class': 'cen'})
+    type_hrefs = type_cell.find_all('a', {'href': re.compile(r'\/pokemon\/type\/(\w+)')})
+
+    #puts the final two types into a list, then returns them to be sorted later
+    final_type = []
+    for pokemon_type in type_hrefs:
+        type_a = pokemon_type.get('href')
+        final_type.append(type_a.removeprefix("/pokemon/type/"))
+    return final_type
+
 def get_pokemon_data(url):
+    # I create the pokemon entries individually, then append them to the final dict at the end.
+    pokemon_entry = {}
+    
     base_mon_page = requests.get(url)
     soup = BeautifulSoup(base_mon_page.text, "html.parser")
-    all_tds = []
+    first_table = soup.find('table', {'class': 'dextable'})
 
-    tr = soup.find('td', {'class': 'fooinfo'}).findChildren('tr')
-    for td in tr: 
-        all_tds.append(td.find('td').find_next_sibling('td').text)
+    pokemon_name = get_pokemon_name(first_table)
+    pokemon_entry["Name"] = pokemon_name
 
-    pprint(all_tds)
+    # sort pokemon types, checking for single types over dual types
+    pokemon_type = get_pokemon_types(first_table)
+    pokemon_entry["type"] = {}
+    pokemon_entry["type"]["primary"] = pokemon_type[0] 
+    try:
+        pokemon_entry["type"]["secondary"] = pokemon_type[1]
+    except IndexError:
+        pokemon_entry["type"]["secondary"] = "None"
+
+    
     generation_links = get_generation_links(url)
-    print(generation_links)
-    
-    
+    pprint(pokemon_entry)
 
 if __name__ == '__main__':
     national_dex_url = BASE_URL + NATIONAL_DEX_URL
