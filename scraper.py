@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from typing import final
 from bs4 import BeautifulSoup
 from pprint import pprint
 
@@ -7,9 +8,9 @@ import re
 import requests
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
 BASE_URL = "https://www.serebii.net"
 NATIONAL_DEX_URL = "/pokemon/nationalpokedex.shtml"
+FINAL_DICT = {}
 
 
 def get_national_dex(dex_url):
@@ -52,15 +53,23 @@ def get_generation_links(url):
     return dex_links
 
 def get_pokemon_data(url):
-    print("placeholder poke_data")
+    base_mon_page = requests.get(url)
+    soup = BeautifulSoup(base_mon_page.text, "html.parser")
+    all_tds = []
+
+    tr = soup.find('td', {'class': 'fooinfo'}).findChildren('tr')
+    for td in tr: 
+        all_tds.append(td.find('td').find_next_sibling('td').text)
+
+    pprint(all_tds)
+    generation_links = get_generation_links(url)
+    print(generation_links)
+    
     
 
 if __name__ == '__main__':
     national_dex_url = BASE_URL + NATIONAL_DEX_URL
-    final_dict = {}
 
     all_pokemon = get_national_dex(national_dex_url)
     for link in all_pokemon:
-        generation_dex_links = get_generation_links(BASE_URL + link)
-        for link in generation_dex_links:
-            get_pokemon_data(BASE_URL + link)
+        get_pokemon_data(BASE_URL + link)
