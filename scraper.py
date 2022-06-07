@@ -76,10 +76,10 @@ def get_pokemon_data(url):
     
     base_mon_page = requests.get(url)
     soup = BeautifulSoup(base_mon_page.text, "html.parser")
+
     first_table = soup.find('table', {'class': 'dextable'})
 
-    pokemon_name = get_pokemon_name(first_table)
-    pokemon_entry["Name"] = pokemon_name
+    pokemon_entry["Name"] = get_pokemon_name(first_table)
 
     # sort pokemon types, checking for single types over dual types
     pokemon_type = get_pokemon_types(first_table)
@@ -89,7 +89,6 @@ def get_pokemon_data(url):
         pokemon_entry["type"]["secondary"] = pokemon_type[1]
     except IndexError:
         pokemon_entry["type"]["secondary"] = "None"
-
     
     generation_links = get_generation_links(url)
     pprint(pokemon_entry)
