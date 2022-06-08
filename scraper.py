@@ -64,7 +64,7 @@ def get_pokemon_name(dextable):
     return pokemon
 
 def get_pokemon_types(dextable):
-    # takes the first table from get_pokemon_data
+    # takes the main table from get_pokemon_data
     type_cell = dextable.find('td', {'class': 'cen'})
     type_hrefs = type_cell.find_all('a', {'href': re.compile(r'\/pokemon\/type\/(\w+)')})
 
@@ -85,20 +85,41 @@ def get_pokedex_numbers(dextable):
 
     return convert_list_to_dict(list_of_dex_numbers)
 
+def parse_misc_details(dextable):
+    misc_info = dextable.find_all('td', {'class': 'foo'})
+
+    # grabs the classification, height, and weight text
+    misc_info_names = [i.text for i in misc_info]
+    
+    # moves up, then grabs the tr with the values of the above
+    tr_of_misc_info = misc_info[0].parent.find_next_sibling('tr')
+    raw_values = [i.text for i in tr_of_misc_info.find_all('td')]
+
+    #parses the raw values, drops the imperial units if they exist, then appends it to a final list
+    misc_info_values = []
+    for value in raw_values:
+        try:
+            misc_info_values.append(value.split('\r\n\t\t\t')[1])
+        except IndexError:
+            misc_info_values.append(value)
+
+    # converts both above lists to a dict to be appended to the entry
+    final_dict = dict(zip(misc_info_names, misc_info_values))
+    return final_dict
 
 def get_pokemon_data(url):
     # I create the pokemon entries individually, then append them to the final dict at the end.
     pokemon_entry = {}
     
     base_mon_page = requests.get(url)
-    soup = BeautifulSoup(base_mon_page.text, "html.parser")
+    base_mon_soup = BeautifulSoup(base_mon_page.text, "html.parser")
 
-    first_table = soup.find('table', {'class': 'dextable'})
+    main_table = base_mon_soup.find('table', {'class': 'dextable'})
 
-    pokemon_entry["Name"] = get_pokemon_name(first_table)
+    pokemon_entry["Name"] = get_pokemon_name(main_table)
 
     # sort pokemon types, checking for single types over dual types
-    pokemon_type = get_pokemon_types(first_table)
+    pokemon_type = get_pokemon_types(main_table)
     pokemon_entry["Type"] = {}
     pokemon_entry["Type"]["Primary"] = pokemon_type[0] 
     try:
@@ -106,9 +127,8 @@ def get_pokemon_data(url):
     except IndexError:
         pokemon_entry["Type"]["Secondary"] = "None"
     
-    
-    pokemon_entry["Dex Number"] = get_pokedex_numbers(first_table)
-
+    pokemon_entry["Dex Number"] = get_pokedex_numbers(main_table)
+    pokemon_entry.update(parse_misc_details(main_table))
     generation_links = get_generation_links(url)
     pprint(pokemon_entry)
 
