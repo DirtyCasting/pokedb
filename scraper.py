@@ -13,6 +13,11 @@ NATIONAL_DEX_URL = "/pokemon/nationalpokedex.shtml"
 FINAL_DICT = {}
 
 
+def convert_list_to_dict(input_dict):
+    it = iter(input_dict)
+    result_dict = dict(zip(it, it))
+    return result_dict
+
 def get_national_dex(dex_url):
     dex_page = requests.get(dex_url)
     soup = BeautifulSoup(dex_page.text, "html.parser")
@@ -70,6 +75,17 @@ def get_pokemon_types(dextable):
         final_type.append(type_a.removeprefix("/pokemon/type/"))
     return final_type
 
+def get_pokedex_numbers(dextable):
+    # grab cell with dex numbers
+    dex_cell = dextable.find_all('td', {'class': 'fooinfo'})[2]
+    dex_numbers = dex_cell.find_all('td')
+
+    # Dirty, but works.  Gets the text of the dex numbers, splits off of the colon, and replaces the pound symbol if found
+    list_of_dex_numbers = [i.text.split()[0].replace('#', '') for i in dex_numbers]
+
+    return convert_list_to_dict(list_of_dex_numbers)
+
+
 def get_pokemon_data(url):
     # I create the pokemon entries individually, then append them to the final dict at the end.
     pokemon_entry = {}
@@ -83,13 +99,16 @@ def get_pokemon_data(url):
 
     # sort pokemon types, checking for single types over dual types
     pokemon_type = get_pokemon_types(first_table)
-    pokemon_entry["type"] = {}
-    pokemon_entry["type"]["primary"] = pokemon_type[0] 
+    pokemon_entry["Type"] = {}
+    pokemon_entry["Type"]["Primary"] = pokemon_type[0] 
     try:
-        pokemon_entry["type"]["secondary"] = pokemon_type[1]
+        pokemon_entry["Type"]["Secondary"] = pokemon_type[1]
     except IndexError:
-        pokemon_entry["type"]["secondary"] = "None"
+        pokemon_entry["Type"]["Secondary"] = "None"
     
+    
+    pokemon_entry["Dex Number"] = get_pokedex_numbers(first_table)
+
     generation_links = get_generation_links(url)
     pprint(pokemon_entry)
 
