@@ -7,7 +7,9 @@ from pprint import pprint
 import re
 import requests
 import logging
+import time
 
+logging.basicConfig(level=logging.DEBUG)
 BASE_URL = "https://www.serebii.net"
 NATIONAL_DEX_URL = "/pokemon/nationalpokedex.shtml"
 FINAL_DICT = {}
@@ -107,6 +109,34 @@ def parse_misc_details(dextable):
     final_dict = dict(zip(misc_info_names, misc_info_values))
     return final_dict
 
+def get_evolution_line(evotable):
+    all_td_pkmn = evotable.find_all('td', {'class': 'pkmn'})
+    pprint(all_td_pkmn)
+    all_evos = []
+    for pokemon in all_td_pkmn:
+        try:
+            link = pokemon.find('a', {'href': re.compile(r'\/pokemon\/\w+')}).get('href')
+            all_evos.append(link.split('/')[-1])
+        except AttributeError:
+            print("Error?")
+            print(pokemon)
+        
+    
+    final_dict = {}
+    count = 1
+    for mon in all_evos:
+        if count == 1:
+            final_dict['Base'] = mon
+            count += 1
+        elif count > 3:
+            final_dict['Mega'] = 'Yes'
+            count += 1
+        else:
+            final_dict[f'Stage {count-1}'] = mon
+            count += 1
+
+    return final_dict
+
 def get_pokemon_data(url):
     # I create the pokemon entries individually, then append them to the final dict at the end.
     pokemon_entry = {}
@@ -115,6 +145,7 @@ def get_pokemon_data(url):
     base_mon_soup = BeautifulSoup(base_mon_page.text, "html.parser")
 
     main_table = base_mon_soup.find('table', {'class': 'dextable'})
+    evotable = base_mon_soup.find('table', {'class': 'evochain'})
 
     pokemon_entry["Name"] = get_pokemon_name(main_table)
 
@@ -129,12 +160,17 @@ def get_pokemon_data(url):
     
     pokemon_entry["Dex Number"] = get_pokedex_numbers(main_table)
     pokemon_entry.update(parse_misc_details(main_table))
+
+    pokemon_entry["Evolution Chain"] = get_evolution_line(evotable)
     generation_links = get_generation_links(url)
     pprint(pokemon_entry)
 
 if __name__ == '__main__':
-    national_dex_url = BASE_URL + NATIONAL_DEX_URL
+    get_pokemon_data('https://serebii.net/pokemon/nidoranf/')
 
-    all_pokemon = get_national_dex(national_dex_url)
-    for link in all_pokemon:
-        get_pokemon_data(BASE_URL + link)
+    # national_dex_url = BASE_URL + NATIONAL_DEX_URL
+
+    # all_pokemon = get_national_dex(national_dex_url)
+    # for link in all_pokemon:
+    #     get_pokemon_data(BASE_URL + link)
+        
